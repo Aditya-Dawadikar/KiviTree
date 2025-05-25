@@ -1,0 +1,38 @@
+# Build output
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Executables
+/kivitree
+/kivitree_test
+/kivitree_server
+
+# Editor/IDE files
+*.swp
+*.swo
+*.swn
+*~
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+
+# OS/Backup
+Thumbs.db
+*.bak
+*.old
+
+# Generated files
+compile_commands.json
+
+# Ignore OneDrive sync artifacts (Windows)
+*.tmp
+*.~*
+
+# Ignore peer config if needed
+peers.txt
