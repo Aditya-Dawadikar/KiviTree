@@ -45,3 +45,16 @@ bool LRUStore::remove(const std::string& key){
     index.erase(key);
     return store.remove(key);
 }
+
+std::unordered_map<std::string, std::string> LRUStore::get_kv_batch() const{
+    std::shared_lock lock(mutex);
+    return store.get_all();
+}
+
+void LRUStore::set_kv_batch(const std::unordered_map<std::string, std::string>& kvs){
+    std::unique_lock lock(mutex);
+
+    for(const auto& [key,value]: kvs){
+        put(key,value);
+    }
+}

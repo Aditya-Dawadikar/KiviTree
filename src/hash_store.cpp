@@ -22,3 +22,7 @@ std::optional<std::string> HashStore::get(const std::string&key) const{
     return std::nullopt;
 }
 
+std::unordered_map<std::string, std::string> HashStore::get_all() const{
+    std::shared_lock lock(mutex);
+    return kv;
+}
