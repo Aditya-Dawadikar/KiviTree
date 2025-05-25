@@ -18,3 +18,16 @@ add_executable(kivitree ${CORE_SRC} ${MAIN_SRC})
 add_executable(kivitree_test ${CORE_SRC} ${TEST_SRC})
 
 add_executable(kivitree_server ${CORE_SRC} ${SERVER_SRC})
+
+# Paxos networking test binaries
+add_executable(paxos_client
+    src/main_client.cpp
+    src/paxos_message.cpp
+    src/rpc_client.cpp
+)
+
+add_executable(paxos_server
+    src/main_server.cpp
+    src/paxos_message.cpp
+    src/rpc_server.cpp
+)
