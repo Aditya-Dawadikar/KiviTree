@@ -31,3 +31,13 @@ add_executable(paxos_server
     src/paxos_message.cpp
     src/rpc_server.cpp
 )
+
+add_executable(paxos_node
+    src/main.cpp
+    src/paxos_node.cpp
+    src/rpc_server.cpp
+    src/rpc_client.cpp
+    src/message_factory.cpp
+)
+
+target_link_libraries(paxos_node pthread)
