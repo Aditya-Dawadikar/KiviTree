@@ -5,7 +5,7 @@
 #include <unistd.h>      // ← for close()
 #include <cstring>       // ← for memset
 
-bool RPCClient::send(const std::string& node_addr, int port, const PaxosMessage& msg){
+bool RPCClient::send(const std::string& node_addr, int port, const Message& msg){
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) return false;
 

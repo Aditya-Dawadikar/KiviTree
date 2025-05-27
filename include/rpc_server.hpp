@@ -1,7 +1,7 @@
-#include "paxos_message.hpp"
 #include <functional>
+#include "message.hpp"
 
 class RPCServer{
     public:
-        void start(int port, std::function<void(PaxosMessage)> handler);
+        static void start(int port, std::function<void(const Message&)> handler);
 };

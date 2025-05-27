@@ -5,9 +5,10 @@
 #include <arpa/inet.h>   // for htons, inet_ntoa
 #include <cstring>       // for memset
 #include <iostream>      // optional logging
+#include "message.hpp"
+#include "message_factory.hpp"
 
-
-void RPCServer::start(int port, std::function<void(PaxosMessage)> handler) {
+void RPCServer::start(int port, std::function<void(const Message&)> handler) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in address{};
     address.sin_family = AF_INET;
@@ -23,8 +24,16 @@ void RPCServer::start(int port, std::function<void(PaxosMessage)> handler) {
         int client_fd = accept(server_fd, nullptr, nullptr);
         char buffer[4096] = {0};
         read(client_fd, buffer, 4096);
-        PaxosMessage msg = PaxosMessage::deserialize(buffer);
-        handler(msg);
+        
+        std::string json_str(buffer);
+
+        try {
+            auto msg_ptr = MessageFactory::from_json(json_str);
+            handler(*msg_ptr);  // calls handler with the correct derived class
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] Message parse failed: " << e.what() << "\n";
+        }
+
         close(client_fd);
     }
 }
