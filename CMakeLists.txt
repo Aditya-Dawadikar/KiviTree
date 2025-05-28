@@ -6,38 +6,27 @@ set(CMAKE_CXX_STANDARD 17)
 include_directories(include)
 
 # Source files (excluding test and main.cpp from reuse)
-file(GLOB CORE_SRC "src/hash_store.cpp" "src/lru_store.cpp" "src/kivitree.cpp")
-file(GLOB MAIN_SRC "src/main.cpp")
-file(GLOB TEST_SRC "tests/kivitree_test.cpp")
-file(GLOB SERVER_SRC "src/kivitree_server.cpp" "src/server.cpp")
+file(GLOB_RECURSE CORE_SRC "src/kivitree_core/*.cpp")
+file(GLOB_RECURSE PAXOS_SRC "src/kivitree_paxos/*.cpp")
+file(GLOB_RECURSE RPC_SRC "src/kivitree_rpc/*.cpp")
+file(GLOB_RECURSE SERVER_SRC "src/kivitree_server/*.cpp")
 
 # Main production binary
-add_executable(kivitree ${CORE_SRC} ${MAIN_SRC})
+add_executable(kivitree ${CORE_SRC} ${PAXOS_SRC} ${RPC_SRC} ${SERVER_SRC} src/main.cpp)
 
-# Test binary — separate main()
-add_executable(kivitree_test ${CORE_SRC} ${TEST_SRC})
-
-add_executable(kivitree_server ${CORE_SRC} ${SERVER_SRC})
-
-# Paxos networking test binaries
-add_executable(paxos_client
-    src/main_client.cpp
-    src/paxos_message.cpp
-    src/rpc_client.cpp
-)
-
-add_executable(paxos_server
-    src/main_server.cpp
-    src/paxos_message.cpp
-    src/rpc_server.cpp
-)
-
+# Paxos Node app
 add_executable(paxos_node
+    ${CORE_SRC}
+    ${PAXOS_SRC}
+    ${RPC_SRC}
     src/main.cpp
-    src/paxos_node.cpp
-    src/rpc_server.cpp
-    src/rpc_client.cpp
-    src/message_factory.cpp
 )
 
 target_link_libraries(paxos_node pthread)
+
+# KiViTree server (handles incoming requests)
+add_executable(kivitree_server
+    ${CORE_SRC}
+    ${SERVER_SRC}
+    ${RPC_SRC}
+)

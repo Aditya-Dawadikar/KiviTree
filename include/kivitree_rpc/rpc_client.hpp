@@ -1,5 +1,5 @@
 #pragma once
-#include "message.hpp"
+#include "kivitree_utils/message.hpp"
 
 class RPCClient{
     public:

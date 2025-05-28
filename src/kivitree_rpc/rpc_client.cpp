@@ -1,4 +1,4 @@
-#include "rpc_client.hpp"
+#include "kivitree_rpc/rpc_client.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>   // ← for inet_pton

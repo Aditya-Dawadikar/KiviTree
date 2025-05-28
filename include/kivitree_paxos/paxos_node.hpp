@@ -1,9 +1,9 @@
 // #include "paxos_message.hpp"
-#include "message.hpp"
+#include "kivitree_utils/message.hpp"
 #include <functional>
 #include <vector>
-#include "rpc_client.hpp"
-#include "heartbeat_message.hpp"
+#include "kivitree_rpc/rpc_client.hpp"
+#include "kivitree_paxos/heartbeat_message.hpp"
 
 class PaxosNode{
     public:

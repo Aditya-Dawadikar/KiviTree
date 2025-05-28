@@ -1,5 +1,6 @@
-#include "hash_store.hpp"
-#include "lru_store.hpp"
+#include "kivitree_core/hash_store.hpp"
+#include "kivitree_core/lru_store.hpp"
+#include "mutex"
 
 void LRUStore::put(const std::string& key, const std::string& value){
     // if key exists, move it to the front

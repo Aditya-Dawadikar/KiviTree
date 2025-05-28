@@ -1,6 +1,6 @@
 #pragma once
-#include "message.hpp"
-#include "json.hpp"
+#include "kivitree_utils/message.hpp"
+#include "kivitree_utils/json.hpp"
 #include <unordered_map>
 using json = nlohmann::json;
 

@@ -1,22 +1,22 @@
 #pragma once
-#include "message.hpp"
-#include "json.hpp"
+#include "kivitree_utils/message.hpp"
+#include "kivitree_utils/json.hpp"
 using json = nlohmann::json;
 
-class PrepareMessage:public Message{
+class PromiseMessage:public Message{
     private:
         std::string proposer_id;
         long long int proposal_number;
         std::vector<std::string> keys;
         long long int timestamp;
     public:
-        PrepareMessage() = default;
+        PromiseMessage() = default;
 
-        PrepareMessage(std::string id, long long proposal, std::vector<std::string> k, long long ts)
+        PromiseMessage(std::string id, long long proposal, std::vector<std::string> k, long long ts)
         : proposer_id(id), proposal_number(proposal), keys(k), timestamp(ts) {}
 
         MessageType get_message_type() const{
-            return MessageType::PREPARE;
+            return MessageType::PROMISE;
         }
 
         std::string serialize() const{
@@ -31,7 +31,7 @@ class PrepareMessage:public Message{
 
         static std::unique_ptr<Message> deserialize(const std::string& json_str){
             json j = json::parse(json_str);
-            return std::make_unique<PrepareMessage>(
+            return std::make_unique<PromiseMessage>(
                 j.at("proposer_id").get<std::string>(),
                 j.at("proposal_number").get<long long>(),
                 j.at("keys").get<std::vector<std::string>>(),

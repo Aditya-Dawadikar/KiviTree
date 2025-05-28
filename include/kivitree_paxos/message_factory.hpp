@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
-#include "message.hpp"
+#include "kivitree_utils/message.hpp"
 
 class MessageFactory {
 public:

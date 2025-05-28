@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hash_store.hpp"
+#include "kivitree_core/hash_store.hpp"
 #include <list>
 #include <unordered_map>
 #include <optional>

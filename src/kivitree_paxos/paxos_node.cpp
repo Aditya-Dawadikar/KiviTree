@@ -1,16 +1,16 @@
-#include "paxos_node.hpp"
-#include "rpc_server.hpp"
-#include "rpc_client.hpp"
-#include "timestamp.hpp"
+#include "kivitree_paxos/paxos_node.hpp"
+#include "kivitree_rpc/rpc_server.hpp"
+#include "kivitree_rpc/rpc_client.hpp"
+#include "kivitree_utils/timestamp.hpp"
 #include <thread>
 #include <iostream>
-#include "message.hpp"
+#include "kivitree_utils/message.hpp"
 #include "future"
-#include "prepare_message.hpp"
-#include "promise_message.hpp"
-#include "accept_message.hpp"
-#include "accepted_message.hpp"
-#include "heartbeat_message.hpp"
+#include "kivitree_paxos/prepare_message.hpp"
+#include "kivitree_paxos/promise_message.hpp"
+#include "kivitree_paxos/accept_message.hpp"
+#include "kivitree_paxos/accepted_message.hpp"
+#include "kivitree_paxos/heartbeat_message.hpp"
 
 PaxosNode::PaxosNode(std::string node_id, std::string node_ip, int node_port, bool is_proposer)
                     :node_id(node_id),node_ip(node_ip), node_port(node_port), is_proposer(is_proposer){}

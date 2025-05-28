@@ -1,5 +1,5 @@
-#include "paxos_node.hpp"
-#include "message.hpp"
+#include "kivitree_paxos/paxos_node.hpp"
+#include "kivitree_utils/message.hpp"
 #include <iostream>
 #include <thread>
 #include <chrono>

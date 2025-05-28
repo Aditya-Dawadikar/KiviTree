@@ -1,29 +1,28 @@
 #pragma once
-#include "message.hpp"
-#include "json.hpp"
-#include <unordered_map>
+#include "kivitree_utils/message.hpp"
+#include "kivitree_utils/json.hpp"
 using json = nlohmann::json;
 
-class AcceptedMessage:public Message{
+class PrepareMessage:public Message{
     private:
         std::string proposer_id;
         long long int proposal_number;
-        std::unordered_map<std::string, std::string> kv_batch;
+        std::vector<std::string> keys;
         long long int timestamp;
     public:
-        AcceptedMessage() = default;
+        PrepareMessage() = default;
 
-        AcceptedMessage(std::string id, long long proposal, std::unordered_map<std::string, std::string> kv_batch, long long ts)
-        : proposer_id(id), proposal_number(proposal), kv_batch(std::move(kv_batch)), timestamp(ts) {}
+        PrepareMessage(std::string id, long long proposal, std::vector<std::string> k, long long ts)
+        : proposer_id(id), proposal_number(proposal), keys(k), timestamp(ts) {}
 
         MessageType get_message_type() const{
-            return MessageType::ACCEPTED;
+            return MessageType::PREPARE;
         }
 
         std::string serialize() const{
             json j;
             j["type"] = static_cast<int>(get_message_type());
-            j["kv_batch"] = kv_batch;
+            j["keys"] = keys;
             j["proposal_number"] = proposal_number;
             j["proposer_id"] = proposer_id;
             j["timestamp"] = timestamp;
@@ -32,10 +31,10 @@ class AcceptedMessage:public Message{
 
         static std::unique_ptr<Message> deserialize(const std::string& json_str){
             json j = json::parse(json_str);
-            return std::make_unique<AcceptedMessage>(
+            return std::make_unique<PrepareMessage>(
                 j.at("proposer_id").get<std::string>(),
                 j.at("proposal_number").get<long long>(),
-                j.at("kv_batch").get<std::unordered_map<std::string, std::string>>(),
+                j.at("keys").get<std::vector<std::string>>(),
                 j.at("timestamp").get<long long>()
             );
         }

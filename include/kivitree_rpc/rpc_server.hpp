@@ -1,5 +1,5 @@
 #include <functional>
-#include "message.hpp"
+#include "kivitree_utils/message.hpp"
 
 class RPCServer{
     public:

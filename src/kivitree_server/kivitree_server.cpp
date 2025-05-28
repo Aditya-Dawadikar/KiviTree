@@ -1,4 +1,4 @@
-#include "server.hpp"
+#include "kivitree_server/server.hpp"
 
 int main(int argc, char* argv[]) {
     int port = 9000;

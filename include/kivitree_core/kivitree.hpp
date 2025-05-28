@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lru_store.hpp"
+#include "kivitree_core/lru_store.hpp"
 #include <string>
 #include <optional>
 #include <vector>

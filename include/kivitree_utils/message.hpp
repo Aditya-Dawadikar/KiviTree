@@ -1,5 +1,13 @@
 #pragma once
-#include "paxos_message.hpp"
+#include <string>
+
+enum MessageType{
+    PREPARE,
+    PROMISE,
+    ACCEPT,
+    ACCEPTED,
+    HEART_BEAT
+};
 
 class Message{
     private:

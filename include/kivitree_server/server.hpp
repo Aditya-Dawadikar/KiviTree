@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kivitree.hpp"
+#include "kivitree_core/kivitree.hpp"
 #include <string>
 
 class KiviTreeServer{

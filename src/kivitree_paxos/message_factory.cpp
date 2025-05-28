@@ -1,10 +1,10 @@
-#include "message_factory.hpp"
-#include "heartbeat_message.hpp"
-#include "prepare_message.hpp"
-#include "promise_message.hpp"
-#include "accept_message.hpp"
-#include "accepted_message.hpp"
-#include "json.hpp"
+#include "kivitree_paxos/message_factory.hpp"
+#include "kivitree_paxos/heartbeat_message.hpp"
+#include "kivitree_paxos/prepare_message.hpp"
+#include "kivitree_paxos/promise_message.hpp"
+#include "kivitree_paxos/accept_message.hpp"
+#include "kivitree_paxos/accepted_message.hpp"
+#include "kivitree_utils/json.hpp"
 
 using json = nlohmann::json;
 

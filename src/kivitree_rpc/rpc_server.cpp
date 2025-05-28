@@ -1,12 +1,12 @@
-#include "rpc_server.hpp"
+#include "kivitree_rpc/rpc_server.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <arpa/inet.h>   // for htons, inet_ntoa
 #include <cstring>       // for memset
 #include <iostream>      // optional logging
-#include "message.hpp"
-#include "message_factory.hpp"
+#include "kivitree_utils/message.hpp"
+#include "kivitree_paxos/message_factory.hpp"
 
 void RPCServer::start(int port, std::function<void(const Message&)> handler) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
