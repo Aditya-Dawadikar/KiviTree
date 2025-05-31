@@ -6,14 +6,14 @@ using json = nlohmann::json;
 
 class AcceptMessage:public Message{
     private:
-        std::string proposer_id;
+        long long int proposer_id;
         long long int proposal_number;
         std::unordered_map<std::string, std::string> kv_batch;
         long long int timestamp;
     public:
         AcceptMessage() = default;
 
-        AcceptMessage(std::string id, long long proposal, std::unordered_map<std::string, std::string> kv_batch, long long ts)
+        AcceptMessage(long long int id, long long proposal, std::unordered_map<std::string, std::string> kv_batch, long long ts)
         : proposer_id(id), proposal_number(proposal), kv_batch(std::move(kv_batch)), timestamp(ts) {}
 
         MessageType get_message_type() const{
@@ -33,7 +33,7 @@ class AcceptMessage:public Message{
         static std::unique_ptr<Message> deserialize(const std::string& json_str){
             json j = json::parse(json_str);
             return std::make_unique<AcceptMessage>(
-                j.at("proposer_id").get<std::string>(),
+                j.at("proposer_id").get<long long int>(),
                 j.at("proposal_number").get<long long>(),
                 j.at("kv_batch").get<std::unordered_map<std::string, std::string>>(),
                 j.at("timestamp").get<long long>()

@@ -10,9 +10,17 @@ file(GLOB_RECURSE CORE_SRC "src/kivitree_core/*.cpp")
 file(GLOB_RECURSE PAXOS_SRC "src/kivitree_paxos/*.cpp")
 file(GLOB_RECURSE RPC_SRC "src/kivitree_rpc/*.cpp")
 file(GLOB_RECURSE SERVER_SRC "src/kivitree_server/*.cpp")
+file(GLOB_RECURSE KIVILEAF "src/kivileaf/*.cpp")
 
 # Main production binary
-add_executable(kivitree ${CORE_SRC} ${PAXOS_SRC} ${RPC_SRC} ${SERVER_SRC} src/main.cpp)
+add_executable(kivitree
+    ${CORE_SRC}
+    ${PAXOS_SRC}
+    ${RPC_SRC}
+    # ${SERVER_SRC}
+    ${KIVILEAF}
+    src/main.cpp
+)
 
 # Paxos Node app
 add_executable(paxos_node
@@ -25,8 +33,8 @@ add_executable(paxos_node
 target_link_libraries(paxos_node pthread)
 
 # KiViTree server (handles incoming requests)
-add_executable(kivitree_server
-    ${CORE_SRC}
-    ${SERVER_SRC}
-    ${RPC_SRC}
-)
+# add_executable(kivitree_server
+#     ${CORE_SRC}
+#     ${SERVER_SRC}
+#     ${RPC_SRC}
+# )

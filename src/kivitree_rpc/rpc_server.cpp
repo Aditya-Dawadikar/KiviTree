@@ -8,7 +8,7 @@
 #include "kivitree_utils/message.hpp"
 #include "kivitree_paxos/message_factory.hpp"
 
-void RPCServer::start(int port, std::function<void(const Message&)> handler) {
+void RPCServer::start(int port, std::function<void(std::unique_ptr<Message>)> handler) {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     sockaddr_in address{};
     address.sin_family = AF_INET;
@@ -28,8 +28,10 @@ void RPCServer::start(int port, std::function<void(const Message&)> handler) {
         std::string json_str(buffer);
 
         try {
+            // std::cout<<"((((((((((((((((((((((((()))))))))))))))))))))))))\n";
+            // std::cout<<json_str<<"\n";
             auto msg_ptr = MessageFactory::from_json(json_str);
-            handler(*msg_ptr);  // calls handler with the correct derived class
+            handler(std::move(msg_ptr));  // calls handler with the correct derived class
         } catch (const std::exception& e) {
             std::cerr << "[ERROR] Message parse failed: " << e.what() << "\n";
         }
