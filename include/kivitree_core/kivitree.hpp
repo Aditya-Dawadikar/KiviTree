@@ -15,4 +15,10 @@ class KiviTree{
         void put(const std::string& key, const std::string& value);
         std::optional<std::string> get(const std::string& key);
         bool remove(const std::string& key);
+
+        std::unordered_map<std::string, std::string> get_kv_batch() const;
+        void set_kv_batch(const std::unordered_map<std::string, std::string>& kvs);
+
+        void print_kivitree();
+        void print_kivitree(std::ostream& out) const;
 };

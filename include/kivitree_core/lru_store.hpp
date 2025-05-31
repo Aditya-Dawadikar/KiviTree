@@ -22,6 +22,7 @@ public:
     std::optional<std::string> get(const std::string& key);
     bool remove(const std::string& key);
 
+
     // batch apis
     std::unordered_map<std::string, std::string> get_kv_batch() const;
     void set_kv_batch(const std::unordered_map<std::string, std::string>& kvs);

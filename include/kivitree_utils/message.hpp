@@ -6,7 +6,9 @@ enum MessageType{
     PROMISE,
     ACCEPT,
     ACCEPTED,
-    HEART_BEAT
+    HEART_BEAT,
+    LOCAL_SYNC_REQUEST,
+    LOCAL_SYNC_RESPONSE
 };
 
 class Message{
