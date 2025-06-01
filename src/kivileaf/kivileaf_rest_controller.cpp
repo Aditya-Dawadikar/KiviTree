@@ -78,6 +78,30 @@ void KiviLeafRestController::register_routes(httplib::Server& svr) {
 
     svr.Put("/put", [this](const httplib::Request& req, httplib::Response& res) {
         
+        if (leaf->node_id != leaf->current_leader_id){
+            // redirect request to leader
+            std::cout<<"[REDIRECT] Redirecting PUT request to Local Leader\n";
+            try{
+                auto leader = leaf->get_current_leader();
+
+                std::ostringstream redirect_url;
+                redirect_url << "http://" << leader.node_ip << ":" << (leader.node_port + 1000) << "/put";
+
+                res.status = 307; // Temporary Redirect
+                res.set_header("Location", redirect_url.str());
+                res.set_content(json({
+                    {"error", "This node is not the leader"},
+                    {"redirect_to", redirect_url.str()}
+                }).dump(4), "application/json");
+                return;
+
+            } catch(const std::exception& e){
+                res.status = 503;
+                res.set_content(json({{"error", "Leader not available"}}).dump(), "application/json");
+                return;
+            }
+        }
+
         log_request("/put", req);
 
         std::string key = req.get_param_value("key");
