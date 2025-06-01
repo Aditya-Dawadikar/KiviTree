@@ -96,7 +96,7 @@ void PaxosNode::log_local_cluster() {
 
 }
 
-void PaxosNode::iniate_heartbeat(){
+void PaxosNode::initiate_heartbeat(){
     std::thread([this](){
         try{
             std::cout << "[THREAD] Heartbeat thread running\n";
@@ -151,7 +151,6 @@ void PaxosNode::iniate_heartbeat(){
     std::cout << "[INFO] Heartbeat thread launched successfully\n";
 }
 
-
 void PaxosNode::set_local_cluster_leader(long long int node_id){
     local_cluster_leader = node_id;
 }
@@ -193,6 +192,12 @@ void PaxosNode::initiate_heartbeat_failure_detection(){
                         }
                     }
                 }
+
+                if(local_cluster_leader == -1){
+                    // elect a leader
+                    this->on_leader_failure_detected();
+                }
+
                 std::this_thread::sleep_for(std::chrono::seconds(HEARTBEAT_SLEEP_TIME));
             }
         }catch (const std::exception& e) {
@@ -323,8 +328,6 @@ void PaxosNode::remove_node(PaxosNodeSharableDescriptor node){
 
 void PaxosNode::receive_heart_beat(HeartBeatMessage msg){
     msg.log_heartbeat();
-    // std::cout<<"&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
-    // std::cout<<msg.node_id<<"\n";
     if(!update_last_seen(msg)){
         // probably a new node, so add it to the list
         PaxosNodeSharableDescriptor new_node{
@@ -365,6 +368,7 @@ void PaxosNode::broadcast_heart_beat(const HeartBeatMessage base_msg, int cluste
         }
     }else{
             // local cluster
+            local_heartbeat_epoch +=1;
             for(const auto& node: local_cluster_nodes){
                 if (node.node_id != this->node_id){
                     tasks.push_back(std::async(std::launch::async, [this, node, base_msg](){

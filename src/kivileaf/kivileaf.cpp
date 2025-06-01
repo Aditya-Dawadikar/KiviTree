@@ -8,40 +8,46 @@
 #include <unordered_map>
 #include <future>
 #include "kivileaf/local_sync_self_promotion.hpp"
+#include "kivileaf/local_sync_self_promotion_ack.hpp"
 
 KiviLeaf::KiviLeaf(std::string node_ip,
                     int node_port,
                     long long int node_id,
                     int leaf_role,
-                    bool is_proposer,
-                    int current_leader_id)
-                    :leaf_role(leaf_role),current_leader_id(current_leader_id), PaxosNode(node_id, node_ip, node_port, is_proposer){
+                    bool is_proposer)
+                    :leaf_role(leaf_role), PaxosNode(node_id, node_ip, node_port, is_proposer){
+    this->current_leader_id = -1;
     // TODO:
     // dont declare yourself the leader
     // interpret leadership status from the cluster
 }
 
-void KiviLeaf::get_local_cluster_leader(){
-    // TODO:
-    // request all nodes to check who is the leader
-    // if no leader found, become the leader
-}
+// void KiviLeaf::set_local_cluster_leader(){
+//     // TODO:
+//     // request all nodes to check who is the leader
+//     // if no leader found, become the leader
+// }
 
 KiviLeaf::PaxosNodeDescriptor KiviLeaf::get_current_leader(){
-    PaxosNodeDescriptor curr_lead;
-    for(const auto& node: local_cluster_nodes){
-        if(node.node_id == current_leader_id){
-            curr_lead.node_id = node.node_id;
-            curr_lead.node_ip = node.node_ip;
-            curr_lead.node_port = node.node_port;
-            curr_lead.last_seen = node.last_seen;
-            curr_lead.is_alive = node.is_alive;
+    if (current_leader_id == -1){
+        // must elect new leader
+        return PaxosNodeDescriptor{-1, "", -1, -1, false};
+    }else{
+        PaxosNodeDescriptor curr_lead;
+        for(const auto& node: local_cluster_nodes){
+            if(node.node_id == current_leader_id){
+                curr_lead.node_id = node.node_id;
+                curr_lead.node_ip = node.node_ip;
+                curr_lead.node_port = node.node_port;
+                curr_lead.last_seen = node.last_seen;
+                curr_lead.is_alive = node.is_alive;
 
-            return curr_lead;
+                return curr_lead;
+            }
         }
-    }
 
-    throw std::invalid_argument("Current Leader: "+std::to_string(current_leader_id)+" not found\n");
+        throw std::invalid_argument("Current Leader: "+std::to_string(current_leader_id)+" not found\n");
+    }
 }
         
 void KiviLeaf::pull_leader_data(){
@@ -92,6 +98,7 @@ void KiviLeaf::broadcast_self_promotion(){
     for(const auto& follower: local_cluster_nodes){
         if(follower.node_id != node_id && follower.is_alive){
             tasks.push_back(std::async(std::launch::async, [this, follower, msg](){
+                std::cout<<"[PROMOTE] Broadcasting self promotion to "<<follower.node_id<<"\n";
                 this->send_message(follower.node_ip, follower.node_port, msg);
             }));
         }
@@ -101,6 +108,27 @@ void KiviLeaf::broadcast_self_promotion(){
     for (auto& task : tasks) {
         task.get();
     }
+}
+
+bool KiviLeaf::has_majority(int votes){
+
+
+    int total_live_node_count = 0;
+    for(const auto& node: local_cluster_nodes){
+        if(node.is_alive){
+            total_live_node_count += 1;
+        }
+    }
+
+    long long int ack_count = promotion_ack_set.size();
+
+    std::cout<<"Total Live Nodes: "<< total_live_node_count<<" , Total Votes: "<< ack_count<<"\n";
+
+    if (ack_count >= std::floor(total_live_node_count/2) + 1){
+        return true;
+    }
+
+    return false;
 }
 
 void KiviLeaf::try_self_promote(){
@@ -130,8 +158,27 @@ void KiviLeaf::try_self_promote(){
             current_leader_id = node_id;
             leaf_role = LOCAL_LEADER;
 
+            self_promotion_ack_count = 0;
+            send_self_promotion_notif = true;
+
             // broadcast self election
             broadcast_self_promotion();
+
+            // launch background broadcaster
+            std::thread([this]() {
+                while (true) {
+                    if(this->has_majority(this->self_promotion_ack_count) && send_self_promotion_notif==true){
+                        std::cout<<"[PROMOTE] Received Self Promotion Acknowledgement from Majority nodes\n";
+                        send_self_promotion_notif = false;
+                        promotion_ack_set.clear();
+                        break;
+                    }else{
+                        std::cout << "[PROMOTE] Re-broadcasting self promotion. Waiting for acknowledgement...\n";
+                        this->broadcast_self_promotion();
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(5));
+                }
+            }).detach();
         } else {
             std::cout << "[LOCAL] Node (" << lowest_id << ") is eligible to become leader. Holding off.\n";
         }
@@ -193,6 +240,12 @@ void KiviLeaf::initiate_message_server(){
                 }
                 case MessageType::LOCAL_SYNC_SELF_PROMOTION:{
                     if (auto res = dynamic_cast<const LocalSyncSelfPromotionMessage*>(msg.get())) {
+                        
+                        if (res->leader_node_id == this->node_id) {
+                            std::cout << "[PROMOTE] Ignoring self promotion message from self\n";
+                            break;
+                        }
+                        
                         std::cout << "[PROMOTE] Received promotion notification from " << res->leader_node_id<< "\n";
 
                         this->current_leader_id = res->leader_node_id;
@@ -204,6 +257,18 @@ void KiviLeaf::initiate_message_server(){
                                 current_leader.is_alive = node.is_alive;
                                 current_leader.last_seen = Timestamp::now_ms();
                                 current_leader.last_sync = -1;
+
+                                // ✅ Send ACK here using correct destination
+                                LocalSyncSelfPromotionAckMessage ack = LocalSyncSelfPromotionAckMessage(
+                                    node.node_id,               // leader_id
+                                    res->promotion_timestamp,  // same timestamp
+                                    this->node_id,             // self id
+                                    Timestamp::now_ms()
+                                );
+                                std::cout<<"[PROMOTE] Sending Self Promotion Acknowledgement to: "<<node.node_id<<" "<<node.node_ip<<":"<<node.node_port<<"\n";
+                                this->send_message(node.node_ip, node.node_port, ack);  // ✅ reliable destination
+                                break; // exit loop
+
                             }
                         }
 
@@ -215,7 +280,22 @@ void KiviLeaf::initiate_message_server(){
                     }
                     break;
                 }
-
+                case MessageType::LOCAL_SYNC_SELF_PROMOTION_ACK:{
+                    if (auto res = dynamic_cast<const LocalSyncSelfPromotionAckMessage*>(msg.get())) {
+                        std::cout << "[PROMOTE] Received promotion acknowledgement notification from " << res->follower_node_id<< "\n";
+                        
+                        if(promotion_ack_set.find(res->follower_node_id) != promotion_ack_set.end()){
+                            // already received ack from node
+                            std::cout<<"[PROMOTE] Vote already counted for node "<<res->follower_node_id<<"\n";
+                        }else{
+                            self_promotion_ack_count += 1;
+                            promotion_ack_set.insert(res->follower_node_id);
+                        }
+                    } else {
+                        std::cerr << "[ERROR] Invalid LOCAL_SYNC_SELF_PROMOTION_ACK message\n";
+                    }
+                    break;
+                }
                 default: {
                     // std::cout << "[LEAF] Forwarding to Paxos handler\n";
                     this->handle_paxos_message(std::move(msg));
@@ -233,13 +313,16 @@ void KiviLeaf::run(int port){
     std::cout << "[LEAF] Starting KiviLeaf node " << node_id << " on port " << node_port << "\n";
 
     // thread to send heart beats
-    this->iniate_heartbeat();
+    this->initiate_heartbeat();
 
     // thread to detect failing nodes
     this->initiate_heartbeat_failure_detection();
 
     // thread to accept messages from cluster nodes
     this->initiate_message_server();
+
+    // elect local leader
+    this->on_startup_leader_detection();
 
     // fetch data from leader on boot
     try {

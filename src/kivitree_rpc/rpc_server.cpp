@@ -28,8 +28,6 @@ void RPCServer::start(int port, std::function<void(std::unique_ptr<Message>)> ha
         std::string json_str(buffer);
 
         try {
-            // std::cout<<"((((((((((((((((((((((((()))))))))))))))))))))))))\n";
-            // std::cout<<json_str<<"\n";
             auto msg_ptr = MessageFactory::from_json(json_str);
             handler(std::move(msg_ptr));  // calls handler with the correct derived class
         } catch (const std::exception& e) {

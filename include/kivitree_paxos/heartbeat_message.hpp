@@ -35,8 +35,6 @@ class HeartBeatMessage:public Message{
 
         static std::unique_ptr<Message> deserialize(const std::string& json_str){
             json j = json::parse(json_str);
-            // std::cout<<"=======================================\n";
-            // std::cout<<j.dump()<<"\n";
             return std::make_unique<HeartBeatMessage>(
                 j.at("node_id").get<long long int>(),
                 j.at("node_ip").get<std::string>(),

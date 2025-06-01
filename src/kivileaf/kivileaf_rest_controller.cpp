@@ -45,10 +45,23 @@ void KiviLeafRestController::register_routes(httplib::Server& svr) {
     svr.Get("/cluster-status", [this](const httplib::Request& req, httplib::Response& res) {
         log_request("/cluster-status", req);
 
-        nlohmann::json result = nlohmann::json::array();
+        nlohmann::json followers_json = nlohmann::json::array();
+        nlohmann::json members_json = nlohmann::json::array();
+
+
+
         for (const auto& node : leaf->local_cluster_nodes) {
-            result.push_back(to_json(node));
+            members_json.push_back(to_json(node));
+
+            if (node.node_id != this->leaf->current_leader_id){
+                followers_json.push_back(node.node_id);
+            }
         }
+
+        nlohmann::json result;
+        result["leader"] = this->leaf->current_leader_id;
+        result["followers"] = followers_json;
+        result["members"] = members_json;
 
         res.set_content(result.dump(4), "application/json");  // pretty printed
     });

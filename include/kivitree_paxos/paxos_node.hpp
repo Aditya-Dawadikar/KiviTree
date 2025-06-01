@@ -13,6 +13,8 @@ class PaxosNode{
         int node_port;
         bool is_proposer;
 
+        long long int local_heartbeat_epoch = 0;
+
         RPCClient rpc_client;
 
         struct PaxosNodeDescriptor{
@@ -75,7 +77,7 @@ class PaxosNode{
         void handle_paxos_message(const std::unique_ptr<Message> msg);
 
         // initiate heartbeat
-        void iniate_heartbeat();
+        void initiate_heartbeat();
         // detect heartbeat failures
         void initiate_heartbeat_failure_detection();
 
