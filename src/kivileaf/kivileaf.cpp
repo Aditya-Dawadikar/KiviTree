@@ -34,31 +34,35 @@ KiviLeaf::PaxosNodeDescriptor KiviLeaf::get_current_leader(){
     throw std::invalid_argument("Current Leader: "+std::to_string(current_leader_id)+" not found\n");
 }
         
-// void KiviLeaf::pull_leader_data(){
-//     LocalSyncRequestMessage msg = LocalSyncRequestMessage(this->node_id, this->last_sync_time);
-//     this->send_message(current_leader.node_ip, current_leader.node_port, msg);
-// }
+void KiviLeaf::pull_leader_data(){
+    std::cout<<"[SYNC] Sending Local Sync Request\n";
+    LocalSyncRequestMessage msg = LocalSyncRequestMessage(this->node_id, this->last_sync_time);
+    this->send_message(current_leader.node_ip, current_leader.node_port, msg);
+}
 
-// void KiviLeaf::push_leader_data(PaxosNodeDescriptor requester_node){
+void KiviLeaf::push_leader_data(PaxosNodeDescriptor requester_node){
 
-//     std::unordered_map<std::string, std::string> batch_res = this->kivi.get_kv_batch();
+    std::cout<<"[SYNC] Sending Local Sync Response\n";
 
-//     LocalSyncPayload payload;
-//     payload.load_from_map(batch_res);
+    std::unordered_map<std::string, std::string> batch_res = this->kivi.get_kv_batch();
 
-//     LocalSyncResponseMessage msg = LocalSyncResponseMessage(requester_node.node_id,
-//                                                             requester_node.last_sync,
-//                                                             Timestamp::now_ms(),
-//                                                             payload);
+    LocalSyncPayload payload;
+    payload.load_from_map(batch_res);
+
+    LocalSyncResponseMessage msg = LocalSyncResponseMessage(node_id,
+                                                            requester_node.node_id,
+                                                            requester_node.last_sync,
+                                                            Timestamp::now_ms(),
+                                                            payload);
     
-//     this->send_message(requester_node.node_ip, requester_node.node_port, msg);
-// }
+    this->send_message(requester_node.node_ip, requester_node.node_port, msg);
+}
 
 void KiviLeaf::push_to_followers(std::string key, std::string value){
     std::vector<std::future<void>> tasks;
     LocalSyncPushMessage msg = LocalSyncPushMessage(node_id, Timestamp::now_ms(), key, value);
     for(const auto& follower: local_cluster_nodes){
-        if(follower.node_id != node_id){
+        if(follower.node_id != node_id && follower.is_alive){
             tasks.push_back(std::async(std::launch::async, [this, follower, msg](){
                 std::cout<<"[PUSHED] to "<<follower.node_id<<"\n";
                 this->send_message(follower.node_ip, follower.node_port, msg);
@@ -90,42 +94,42 @@ void KiviLeaf::initiate_message_server(){
                     }
                     break;
                 }
-                // case MessageType::LOCAL_SYNC_REQUEST: {
-                //     if (auto req = dynamic_cast<const LocalSyncRequestMessage*>(msg.get())) {
-                //         std::cout << "[LEAF] Received sync request from " << req->follower_node_id << "\n";
+                case MessageType::LOCAL_SYNC_REQUEST: {
+                    if (auto req = dynamic_cast<const LocalSyncRequestMessage*>(msg.get())) {
+                        std::cout << "[SYNC] Received sync request from " << req->follower_node_id << "\n";
                         
-                //         // find the follower in local cluster members
-                //         for(const auto& local_node: local_cluster_nodes){
-                //             if (local_node.node_id == req->follower_node_id){
-                //                 // node found
-                //                 PaxosNodeDescriptor requester;
-                //                 requester.node_id = req->follower_node_id;
-                //                 requester.node_ip = local_node.node_ip;
-                //                 requester.node_port = local_node.node_port;
-                //                 requester.last_seen = local_node.last_seen;
-                //                 requester.last_sync = local_node.last_sync;
+                        // find the follower in local cluster members
+                        for(const auto& local_node: local_cluster_nodes){
+                            if (local_node.node_id == req->follower_node_id){
+                                // node found
+                                PaxosNodeDescriptor requester;
+                                requester.node_id = req->follower_node_id;
+                                requester.node_ip = local_node.node_ip;
+                                requester.node_port = local_node.node_port;
+                                requester.last_seen = local_node.last_seen;
+                                requester.last_sync = local_node.last_sync;
 
-                //                 this->push_leader_data(requester);
-                //                 return;
-                //             }
-                //         }
-                //         std::cerr << "[ERROR] Invalid LOCAL_SYNC_REQUEST message, Requester node not found\n";
+                                this->push_leader_data(requester);
+                                return;
+                            }
+                        }
+                        std::cerr << "[ERROR] Invalid LOCAL_SYNC_REQUEST message, Requester node not found\n";
                         
-                //     } else {
-                //         std::cerr << "[ERROR] Invalid LOCAL_SYNC_REQUEST message\n";
-                //     }
-                //     break;
-                // }
-                // case MessageType::LOCAL_SYNC_RESPONSE:{
-                //     if (auto res = dynamic_cast<const LocalSyncResponseMessage*>(msg.get())) {
-                //         std::cout << "[LEAF] Received sync response from " << res->leader_node_id<< "\n";
-                //         this->kivi.set_kv_batch(res->payload.get_payload());
-                //         this->last_sync_time = res->latest_sync_timestamp;
-                //     } else {
-                //         std::cerr << "[ERROR] Invalid LOCAL_SYNC_RESPONSE message\n";
-                //     }
-                //     break;
-                // }
+                    } else {
+                        std::cerr << "[ERROR] Invalid LOCAL_SYNC_REQUEST message\n";
+                    }
+                    break;
+                }
+                case MessageType::LOCAL_SYNC_RESPONSE:{
+                    if (auto res = dynamic_cast<const LocalSyncResponseMessage*>(msg.get())) {
+                        std::cout << "[SYNC] Received sync response from " << res->leader_node_id<< "\n";
+                        this->kivi.set_kv_batch(res->payload.get_payload());
+                        this->last_sync_time = res->latest_sync_timestamp;
+                    } else {
+                        std::cerr << "[ERROR] Invalid LOCAL_SYNC_RESPONSE message\n";
+                    }
+                    break;
+                }
 
                 default: {
                     // std::cout << "[LEAF] Forwarding to Paxos handler\n";
@@ -153,14 +157,14 @@ void KiviLeaf::run(int port){
     this->initiate_message_server();
 
     // fetch data from leader on boot
-    // try {
-    //     this->current_leader = this->get_current_leader();
-    //     if (this->node_id != this->current_leader.node_id){
-    //         this->pull_leader_data();
-    //     }
-    // } catch (const std::exception& e) {
-    //     std::cerr << "[WARN] Failed to fetch leader on boot: " << e.what() << "\n";
-    // }
+    try {
+        this->current_leader = this->get_current_leader();
+        if (this->node_id != this->current_leader.node_id){
+            this->pull_leader_data();
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[WARN] Failed to fetch leader on boot: " << e.what() << "\n";
+    }
 
     // Start REST API
     int rest_port = node_port + 1000;

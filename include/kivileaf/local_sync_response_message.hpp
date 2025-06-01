@@ -13,9 +13,11 @@ class LocalSyncResponseMessage:public Message{
         long long int latest_sync_timestamp;
         LocalSyncPayload payload;
 
-        LocalSyncResponseMessage(long long follower_id,
-                             long long last_sync_timestamp,
-                             long long latest_sync_timestamp,
+        LocalSyncResponseMessage(
+                             long long int leader_node_id,
+                             long long int follower_id,
+                             long long int last_sync_timestamp,
+                             long long int latest_sync_timestamp,
                              const LocalSyncPayload& p)
         : leader_node_id(leader_node_id),
           follower_node_id(follower_id),
@@ -30,6 +32,7 @@ class LocalSyncResponseMessage:public Message{
         std::string serialize() const{
             json j;
             j["type"] = static_cast<int>(get_message_type());
+            j["leader_node_id"] = leader_node_id;
             j["follower_node_id"] = follower_node_id;
             j["last_sync_timestamp"] = last_sync_timestamp;
             j["latest_sync_timestamp"] = latest_sync_timestamp;
@@ -42,6 +45,7 @@ class LocalSyncResponseMessage:public Message{
             LocalSyncPayload payload;
             payload.load(j.at("payload").get<std::string>());
             return std::make_unique<LocalSyncResponseMessage>(
+                j.at("leader_node_id").get<long long int>(),
                 j.at("follower_node_id").get<long long int>(),
                 j.at("last_sync_timestamp").get<long long int>(),
                 j.at("latest_sync_timestamp").get<long long int>(),

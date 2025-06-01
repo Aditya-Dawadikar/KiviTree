@@ -11,7 +11,8 @@ class LocalSyncRequestMessage:public Message{
         long long int follower_node_id;
         long long int last_sync_timestamp;
 
-        LocalSyncRequestMessage(long long int follower_node_id, long long int last_sync_timestamp)
+        LocalSyncRequestMessage(long long int follower_node_id,
+                                long long int last_sync_timestamp)
                                 :follower_node_id(follower_node_id), last_sync_timestamp(last_sync_timestamp){};
 
         MessageType get_message_type() const{

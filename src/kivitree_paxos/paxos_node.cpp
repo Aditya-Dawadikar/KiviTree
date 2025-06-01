@@ -100,7 +100,7 @@ void PaxosNode::iniate_heartbeat(){
             std::cout << "[THREAD] Heartbeat thread running\n";
             while(true){
                 std::cout << "[ME] ("<<Timestamp::now_ms()<<") I am Alive\n";
-                log_local_cluster();
+                // log_local_cluster();
 
                 HeartBeatMessage msg_cluster, msg_local;
 
@@ -161,7 +161,7 @@ void PaxosNode::initiate_heartbeat_failure_detection(){
                         continue;
                     };
 
-                    std::cout<<"Last Seen: "<<node.node_id<<" "<<(now - node.last_seen)<<"\n";
+                    // std::cout<<"Last Seen: "<<node.node_id<<" "<<(now - node.last_seen)<<"\n";
                     if(now - node.last_seen > 1000*HEARTBEAT_SLEEP_TIME*HEARTBEAT_SKIP_COUNT && node.is_alive){
                         // mark node as dead
                         node.is_alive = false;
@@ -174,7 +174,7 @@ void PaxosNode::initiate_heartbeat_failure_detection(){
                         continue;
                     };
 
-                    std::cout<<"Last Seen: "<<node.node_id<<" "<<(now - node.last_seen)<<"\n";
+                    // std::cout<<"Last Seen: "<<node.node_id<<" "<<(now - node.last_seen)<<"\n";
                     if(now - node.last_seen > 1000*HEARTBEAT_SLEEP_TIME*HEARTBEAT_SKIP_COUNT && node.is_alive){
                         // mark node as dead
                         node.is_alive = false;
