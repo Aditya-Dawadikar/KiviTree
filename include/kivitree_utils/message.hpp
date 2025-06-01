@@ -8,7 +8,8 @@ enum MessageType{
     ACCEPTED,
     HEART_BEAT,
     LOCAL_SYNC_REQUEST,
-    LOCAL_SYNC_RESPONSE
+    LOCAL_SYNC_RESPONSE,
+    LOCAL_SYNC_PUSH
 };
 
 class Message{

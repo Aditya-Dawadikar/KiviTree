@@ -6,6 +6,7 @@
 KiviTree::KiviTree(size_t capacity): engine(capacity){}
 
 void KiviTree::put(const std::string& key, const std::string& value) {
+    std::cout<<"[INSERT] "<<key<<": "<<value<<"\n";
     engine.put(key, value);
 }
 

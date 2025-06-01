@@ -1,6 +1,8 @@
 #include "kivileaf/kivileaf_rest_controller.hpp"
 #include <iostream>
 #include "kivitree_utils/json.hpp"
+#include "kivitree_utils/kivi_json.hpp"
+#include "kivileaf/kivileaf.hpp"
 
 using json = nlohmann::json;
 
@@ -40,6 +42,18 @@ static auto log_request = [](const std::string& endpoint, const httplib::Request
 
 void KiviLeafRestController::register_routes(httplib::Server& svr) {
 
+    svr.Get("/cluster-status", [this](const httplib::Request& req, httplib::Response& res) {
+        log_request("/cluster-status", req);
+
+        nlohmann::json result = nlohmann::json::array();
+        for (const auto& node : leaf->local_cluster_nodes) {
+            result.push_back(to_json(node));
+        }
+
+        res.set_content(result.dump(4), "application/json");  // pretty printed
+    });
+
+
     svr.Get("/get", [this](const httplib::Request& req, httplib::Response& res) {
         log_request("/get", req);
         if (!req.has_param("key")) {
@@ -78,6 +92,10 @@ void KiviLeafRestController::register_routes(httplib::Server& svr) {
 
         leaf->kivi.put(key, val);
         json result = {{"status", "OK"}, {"key", key}};
+
+        // publish data
+        leaf->push_to_followers(key, val);
+
         res.set_content(result.dump(), "application/json");
     });
 
