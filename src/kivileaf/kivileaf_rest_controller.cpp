@@ -2,6 +2,7 @@
 #include <iostream>
 #include "kivitree_utils/json.hpp"
 #include "kivitree_utils/kivi_json.hpp"
+#include "kivileaf/kivileaf.hpp"
 
 using json = nlohmann::json;
 
@@ -91,6 +92,10 @@ void KiviLeafRestController::register_routes(httplib::Server& svr) {
 
         leaf->kivi.put(key, val);
         json result = {{"status", "OK"}, {"key", key}};
+
+        // publish data
+        leaf->push_to_followers(key, val);
+
         res.set_content(result.dump(), "application/json");
     });
 

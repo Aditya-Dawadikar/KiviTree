@@ -5,6 +5,7 @@
 #include "kivitree_paxos/accept_message.hpp"
 #include "kivitree_paxos/accepted_message.hpp"
 #include "kivitree_utils/json.hpp"
+#include "kivileaf/local_sync_push_message.hpp"
 
 using json = nlohmann::json;
 
@@ -23,6 +24,8 @@ std::unique_ptr<Message> MessageFactory::from_json(const std::string& json_str) 
             return AcceptMessage::deserialize(json_str);
         case MessageType::ACCEPTED:
             return AcceptedMessage::deserialize(json_str);
+        case MessageType::LOCAL_SYNC_PUSH:
+            return LocalSyncPushMessage::deserialize(json_str);
         default:
             throw std::runtime_error("Unknown message type");
     }
