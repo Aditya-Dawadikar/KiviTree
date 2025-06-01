@@ -24,6 +24,7 @@ class PaxosNode{
             bool is_alive;
         };
 
+        long long int local_cluster_leader;
         std::vector<PaxosNodeDescriptor> local_cluster_nodes;
         std::vector<PaxosNodeDescriptor> cluster_nodes;
 
@@ -55,6 +56,10 @@ class PaxosNode{
         void register_cluster_nodes(const std::vector<PaxosNodeSharableDescriptor>& initial_nodes);
         void log_cluster();
         void log_local_cluster();
+        void set_local_cluster_leader(long long int node_id);
+        virtual void on_leader_failure_detected() {
+            std::cout << "[PAXOS] Base leader failure detected\n";
+        } // Default: do nothing
 
         // handlers to send msgs
         bool send_heart_beat(std::string node_ip, int node_port, HeartBeatMessage msg);  // to be called every K seconds on a seperate thread

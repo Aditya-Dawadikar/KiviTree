@@ -42,6 +42,8 @@ int main(int argc, char* argv[]) {
 
     node.register_cluster_nodes(cluster);
 
+    node.set_local_cluster_leader(10000);
+
     node.run(node_port);
 
     while (true) {
