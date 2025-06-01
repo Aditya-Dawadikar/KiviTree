@@ -9,7 +9,8 @@ enum MessageType{
     HEART_BEAT,
     LOCAL_SYNC_REQUEST,
     LOCAL_SYNC_RESPONSE,
-    LOCAL_SYNC_PUSH
+    LOCAL_SYNC_PUSH,
+    LOCAL_SYNC_SELF_PROMOTION
 };
 
 class Message{

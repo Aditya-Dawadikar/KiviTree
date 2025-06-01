@@ -18,7 +18,9 @@ const int HEARTBEAT_SLEEP_TIME = 5; // 3 seconds
 const int HEARTBEAT_SKIP_COUNT = 3; // accomodate 3 skipped heartbeats
 
 PaxosNode::PaxosNode(long long int node_id, std::string node_ip, int node_port, bool is_proposer)
-                    :node_id(node_id),node_ip(node_ip), node_port(node_port), is_proposer(is_proposer){}
+                    :node_id(node_id),node_ip(node_ip), node_port(node_port), is_proposer(is_proposer){
+                        local_cluster_leader = -1;
+                    }
 
 void PaxosNode::log_cluster(){
     std::cout << "\n[CLUSTER NODES]\n";
@@ -149,6 +151,11 @@ void PaxosNode::iniate_heartbeat(){
     std::cout << "[INFO] Heartbeat thread launched successfully\n";
 }
 
+
+void PaxosNode::set_local_cluster_leader(long long int node_id){
+    local_cluster_leader = node_id;
+}
+
 void PaxosNode::initiate_heartbeat_failure_detection(){
     std::thread([this](){
         try{
@@ -179,6 +186,11 @@ void PaxosNode::initiate_heartbeat_failure_detection(){
                         // mark node as dead
                         node.is_alive = false;
                         std::cout << "[DEAD] Node "<< node.node_id<<" marked as DEAD\n";
+
+                        if (node.node_id == local_cluster_leader){
+                            // leader was found dead
+                            this->on_leader_failure_detected();
+                        }
                     }
                 }
                 std::this_thread::sleep_for(std::chrono::seconds(HEARTBEAT_SLEEP_TIME));

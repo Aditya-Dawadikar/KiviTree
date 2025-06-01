@@ -25,7 +25,12 @@ class KiviLeaf:public PaxosNode{
         void push_leader_data(PaxosNodeDescriptor requester_node);
         void push_to_followers(std::string key, std::string value);
         void check_leader_health();
+        void get_local_cluster_leader();
         void try_self_promote();
+        void on_leader_failure_detected() override {
+            this->try_self_promote();
+        }
+        void broadcast_self_promotion();
         void run(int port);
         void initiate_message_server();
 

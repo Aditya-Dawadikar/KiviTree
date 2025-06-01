@@ -8,6 +8,7 @@
 #include "kivileaf/local_sync_push_message.hpp"
 #include "kivileaf/local_sync_request_message.hpp"
 #include "kivileaf/local_sync_response_message.hpp"
+#include "kivileaf/local_sync_self_promotion.hpp"
 
 using json = nlohmann::json;
 
@@ -32,6 +33,8 @@ std::unique_ptr<Message> MessageFactory::from_json(const std::string& json_str) 
             return LocalSyncResponseMessage::deserialize(json_str);
         case MessageType::LOCAL_SYNC_PUSH:
             return LocalSyncPushMessage::deserialize(json_str);
+        case MessageType::LOCAL_SYNC_SELF_PROMOTION:
+            return LocalSyncSelfPromotionMessage::deserialize(json_str);
         default:
             throw std::runtime_error("Unknown message type");
     }

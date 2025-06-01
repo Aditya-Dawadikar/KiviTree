@@ -7,6 +7,7 @@
 #include "kivileaf/kivileaf_rest_controller.hpp"
 #include <unordered_map>
 #include <future>
+#include "kivileaf/local_sync_self_promotion.hpp"
 
 KiviLeaf::KiviLeaf(std::string node_ip,
                     int node_port,
@@ -15,6 +16,15 @@ KiviLeaf::KiviLeaf(std::string node_ip,
                     bool is_proposer,
                     int current_leader_id)
                     :leaf_role(leaf_role),current_leader_id(current_leader_id), PaxosNode(node_id, node_ip, node_port, is_proposer){
+    // TODO:
+    // dont declare yourself the leader
+    // interpret leadership status from the cluster
+}
+
+void KiviLeaf::get_local_cluster_leader(){
+    // TODO:
+    // request all nodes to check who is the leader
+    // if no leader found, become the leader
 }
 
 KiviLeaf::PaxosNodeDescriptor KiviLeaf::get_current_leader(){
@@ -76,8 +86,59 @@ void KiviLeaf::push_to_followers(std::string key, std::string value){
     }
 }
 
+void KiviLeaf::broadcast_self_promotion(){
+    std::vector<std::future<void>> tasks;
+    LocalSyncSelfPromotionMessage msg = LocalSyncSelfPromotionMessage(node_id, Timestamp::now_ms());
+    for(const auto& follower: local_cluster_nodes){
+        if(follower.node_id != node_id && follower.is_alive){
+            tasks.push_back(std::async(std::launch::async, [this, follower, msg](){
+                this->send_message(follower.node_ip, follower.node_port, msg);
+            }));
+        }
+    }
+
+    // Wait for all sends to finish
+    for (auto& task : tasks) {
+        task.get();
+    }
+}
+
 void KiviLeaf::try_self_promote(){
-    // TODO: later
+    if(leaf_role != PROMOTION_READY_REPLICA) return;
+
+    try{
+        auto leader = get_current_leader();
+        
+        for(const auto& node:local_cluster_nodes){
+            if (node.node_id == leader.node_id){
+                if(node.is_alive){return;}  // leader is still active
+            }
+        }
+
+        std::cout<<"[LOCAL] Detected dead leader: "<< leader.node_id<<"\n";
+
+        long long lowest_id = node_id;
+        for(const auto& node: local_cluster_nodes){
+            if(node.is_alive && node.node_id < lowest_id){
+                lowest_id = node.node_id;
+            }
+        }
+
+        if (lowest_id == node_id){
+            // can promote self as leader
+            std::cout << "[PROMOTE] I (" << node_id << ") am the lowest ID replica. Promoting myself to leader.\n";
+            current_leader_id = node_id;
+            leaf_role = LOCAL_LEADER;
+
+            // broadcast self election
+            broadcast_self_promotion();
+        } else {
+            std::cout << "[LOCAL] Node (" << lowest_id << ") is eligible to become leader. Holding off.\n";
+        }
+
+    }catch (const std::exception& e) {
+        std::cerr << "[LOCAL] Error determining current leader: " << e.what() << "\n";
+    }
 }
 
 void KiviLeaf::initiate_message_server(){
@@ -127,6 +188,30 @@ void KiviLeaf::initiate_message_server(){
                         this->last_sync_time = res->latest_sync_timestamp;
                     } else {
                         std::cerr << "[ERROR] Invalid LOCAL_SYNC_RESPONSE message\n";
+                    }
+                    break;
+                }
+                case MessageType::LOCAL_SYNC_SELF_PROMOTION:{
+                    if (auto res = dynamic_cast<const LocalSyncSelfPromotionMessage*>(msg.get())) {
+                        std::cout << "[PROMOTE] Received promotion notification from " << res->leader_node_id<< "\n";
+
+                        this->current_leader_id = res->leader_node_id;
+                        for(const auto& node: local_cluster_nodes){
+                            if(node.node_id == res->leader_node_id){
+                                current_leader.node_id = node.node_id;
+                                current_leader.node_ip = node.node_ip;
+                                current_leader.node_port = node.node_port;
+                                current_leader.is_alive = node.is_alive;
+                                current_leader.last_seen = Timestamp::now_ms();
+                                current_leader.last_sync = -1;
+                            }
+                        }
+
+                        // pull data from leader for sync
+                        this->pull_leader_data();
+
+                    } else {
+                        std::cerr << "[ERROR] Invalid LOCAL_SYNC_SELF_PROMOTION message\n";
                     }
                     break;
                 }
